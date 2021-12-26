@@ -45,7 +45,9 @@ map <C-n> :NERDTreeToggle<CR>    " toggle tree with Ctrl+n
 """""""" Aesthetics
 set termguicolors
 set background=dark 
-colorscheme PaperColor
+"colorscheme PaperColor
+"colorscheme github_dark
+colorscheme challenger_deep
 
 set fillchars="fold: "
 
