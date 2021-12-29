@@ -44,10 +44,14 @@ map <C-n> :NERDTreeToggle<CR>    " toggle tree with Ctrl+n
 
 """""""" Aesthetics
 set termguicolors
-set background=dark 
-"colorscheme PaperColor
-"colorscheme github_dark
-colorscheme challenger_deep
+" colorscheme PaperColor
+colorscheme palenight
+
+" Override colors
+highlight Normal guibg=#0d0d19     " Background color 
+highlight SignColumn guibg=#0d0d16 " Column with signs 
+highlight LineNr guibg=#0d0d16     " Line number column
+highlight NonText guibg=#0d0d16     " Line number column
 
 set fillchars="fold: "
 
@@ -79,11 +83,6 @@ let g:airline#extensions#tabline#enabled = 1
 let g:airline#extensions#tabline#left_sep = ''
 let g:airline#extensions#tabline#left_alt_sep = '|'
 
-" noremap <F5> :call LanguageClient_contextMenu()<CR>
-" nnoremap <silent> K :call LanguageClient#textDocument_hover()<CR>
-" nnoremap <silent> gd : call LanguageClient#textDocument_definition()<CR>
-" noremap <silent> <F2> :call LanguageClient#textDocument_rename()<CR>
-
 " Recognize F# files 
 autocmd BufNewFile,BufRead *.fs,*.fsx,*.fsi set filetype=fsharp
 
@@ -108,6 +107,7 @@ require'lspconfig'.rls.setup {
       all_features = true,
     },
   },
+require'lspconfig'.clojure_lsp.setup{},
 }
 
 -- Setup keybindings 
