@@ -13,6 +13,9 @@ bindkey -v
 # The following lines were added by compinstall
 zstyle :compinstall filename '/home/chris/.zshrc'
 
+# Turnoff the beep sound 
+unsetopt BEEP
+
 autoload -Uz compinit
 compinit
 # End of lines added by compinstall
@@ -22,14 +25,14 @@ PROMPT='%n:%2~%# '
 export NVM_DIR="/home/chris/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
 
-alias vi=~/.local/bin/nvim
-alias vim=~/.local/bin/nvim
+alias vi=nvim.appimage
+alias vim=nvim.appimage
 
 alias python=python3
 
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-# Ensure that history is writen immediatly
+# Ensure that zsh history is writen immediatly
 setopt INC_APPEND_HISTORY
 
 # Turing off telemetry for dotnetcore 
@@ -44,7 +47,22 @@ export PATH="$PATH:$HOME/.rvm/bin"
 # This is just to stop go from cluttering my home directory
 export GOPATH=$HOME/Code/Go 
 
-# Aliasing idris properly 
+# Alias things to use rlwap
 alias idris='rlwrap idris2'
-# Adding Lean infristucture to the PATH 
-export PATH="$PATH:$HOME/.elan/bin"
+alias csi='rlwrap csi'
+
+# Use improved R repl 
+alias R=radian
+
+export PATH="/home/chris/.local/gradle-7.5.1/bin:$PATH"
+export PATH="/home/chris/.local/lib/python3.10/site-packages/pyspark/bin:$PATH"
+
+# Make pyenv work
+export PATH="$HOME/.pyenv/bin:$PATH"
+export PATH="$PYENV_ROOT/bin:$PATH"
+
+if command -v pyenv 1>/dev/null 2>&1; then
+  eval "$(pyenv init -)"
+fi
+
+PATH="$HOME/.ghcup/bin:$PATH"

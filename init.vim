@@ -48,10 +48,10 @@ set termguicolors
 colorscheme palenight
 
 " Override colors
-highlight Normal guibg=#0d0d19     " Background color 
-highlight SignColumn guibg=#0d0d16 " Column with signs 
-highlight LineNr guibg=#0d0d16     " Line number column
-highlight NonText guibg=#0d0d16     " Line number column
+"highlight Normal guibg=#0d0d19      " Background color 
+"highlight SignColumn guibg=#0d0d16  " Column with signs 
+"highlight LineNr guibg=#0d0d16      " Line number column
+"highlight NonText guibg=#0d0d16     " Line number column
 
 set fillchars="fold: "
 
@@ -75,7 +75,7 @@ nnoremap <leader>q :b#<bar>bd#<Enter>
 
 " Setup shiftwidth for language with smaller indentation
 autocmd Filetype clojure setlocal shiftwidth=2
-autocmd Filetype elixir  setlocal shiftwidth=2
+autocmd Filetype scheme setlocal shiftwidth=2
 autocmd Filetype html    setlocal shiftwidth=2
 
 " Configuring vim airline 
@@ -86,8 +86,12 @@ let g:airline#extensions#tabline#left_alt_sep = '|'
 " Recognize F# files 
 autocmd BufNewFile,BufRead *.fs,*.fsx,*.fsi set filetype=fsharp
 
+" Only use vim-sexp for lisp files
+let g:sexp_filetypes = 'clojure,janet,scheme'
+
 " Set up language specific config 
-autocmd Filetype clojure source ~/.config/nvim/langs/clojure.vim
+autocmd Filetype clojure source ~/.config/nvim/langs/lisp.vim
+autocmd Filetype scheme source ~/.config/nvim/langs/lisp.vim
 autocmd Filetype tex source ~/.config/nvim/langs/tex.vim
 autocmd Filetype racket source ~/.config/nvim/langs/racket.vim
 autocmd Filetype markdown source ~/.config/nvim/langs/markdown.vim
@@ -99,16 +103,9 @@ autocmd Filetype pug source ~/.config/nvim/langs/pug.vim
 " Configure language server
 lua << EOF 
 require'lspconfig'.pyright.setup{}
-require'lspconfig'.rls.setup {
-  settings = {
-    rust = {
-      unstable_features = true,
-      build_on_save = false,
-      all_features = true,
-    },
-  },
-require'lspconfig'.clojure_lsp.setup{},
-}
+require'lspconfig'.rust_analyzer.setup{}
+require'lspconfig'.zls.setup{}
+require'lspconfig'.hls.setup{}
 
 -- Setup keybindings 
 
@@ -134,7 +131,21 @@ for _, lsp in ipairs(servers) do
     }
   }
 end
+
+-- Diable virtual text 
+require'nvim-web-devicons'.get_icons()
+vim.diagnostic.config({
+    virtual_text = true,
+    underline = true,
+    signs = true,
+})
+
+-- Enable Trouble 
+require("trouble").setup {}
 EOF 
+
+" Command to show trouble list 
+nnoremap <leader>xx <cmd>TroubleToggle<cr>
 
 " Auto close preview window
 autocmd! CompleteDone * if pumvisible() == 0 | pclose | endif
@@ -143,3 +154,15 @@ autocmd! CompleteDone * if pumvisible() == 0 | pclose | endif
 let g:deoplete#enable_at_startup = 1
 " Use Tab to fill
 inoremap <expr><TAB> pumvisible() ? "\<C-n>" : "\<TAB>"
+
+" Make telescope work 
+nnoremap <leader>ff <cmd>Telescope find_files<cr>
+nnoremap <leader>fg <cmd>Telescope live_grep<cr>
+nnoremap <leader>fb <cmd>Telescope buffers<cr>
+nnoremap <leader>fh <cmd>Telescope help_tags<cr>
+
+lua << EOF
+require('telescope').setup{ 
+    defaults = { file_ignore_patterns = { "venv", "node_modules"} }
+}
+EOF
