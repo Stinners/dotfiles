@@ -1,0 +1,24 @@
+/* Goes in the Firefox profile folder, on MacOs this is 
+ * /Users/chris/Library/Application Support/Firefox/Profiles/<profile>/chrome
+ */
+
+
+/* Hide the timeline in facebook */
+@-moz-document url(https://www.facebook.com/) {
+    div[role="main"] {
+        display: none !important;
+    }
+}
+
+/* Hide youtube shorts */
+@-moz-document domain(youtube.com) {
+    /* 'Up Next' suggestions */
+    ytd-reel-shelf-renderer {
+        display: none !important;
+    }
+
+    /* Main page */
+    ytd-rich-section-renderer {
+        display: none !important;
+    }
+}
