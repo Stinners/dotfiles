@@ -1,13 +1,11 @@
----------------- General Options
-local set = vim.opt
-
--- Search
+local set = vim.o
 set.showmatch = true
 set.hlsearch = true
 set.incsearch = true
 set.showmode = false
 set.wildmode = "longest,list,full"
 set.wildmenu = true
+set.splitright = true
 
 -- Tabs and indentation
 set.tabstop = 4
@@ -33,64 +31,75 @@ set.scrolloff=3
 set.sidescrolloff=7
 set.sidescroll=1
 
-local lisps = {'clojure', 'scheme', 'janet'}
+
+local lisps = {'clojure', 'scheme', 'janet', 'racket', 'lisp'}
+
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not (vim.uv or vim.loop).fs_stat(lazypath) then
+  vim.fn.system({
+    "git",
+    "clone",
+    "--filter=blob:none",
+    "https://github.com/folke/lazy.nvim.git",
+    "--branch=stable", -- latest stable release
+    lazypath,
+  })
+end
+vim.opt.rtp:prepend(lazypath)
 
 -- Defining Plugins
-require('packer').startup(function(use)
-	use 'wbthomason/packer.nvim'
+require('lazy').setup({
+   'wbthomason/packer.nvim',
 
     -- Colorscheme 
-    use 'drewtempelmeyer/palenight.vim'
+    'drewtempelmeyer/palenight.vim',
 
     -- Utilities
-    use 'preservim/nerdtree'
-    use 'vim-airline/vim-airline'
-    use 'vim-scripts/restore_view.vim'
-    use 'nvim-tree/nvim-web-devicons'
-    use {
+    'preservim/nerdtree',
+    'vim-airline/vim-airline',
+    'vim-scripts/restore_view.vim',
+    'nvim-tree/nvim-web-devicons',
+    {
       'nvim-telescope/telescope.nvim',
-      requires = 'nvim-lua/plenary.nvim'
-    }
-    use 'folke/trouble.nvim'
-    use 'ervandew/supertab'
+      dependencies = 'nvim-lua/plenary.nvim'
+    },
+    "easymotion/vim-easymotion",
 
     -- Language support
-    use 'nvim-treesitter/nvim-treesitter'
-    use 'sheerun/vim-polyglot'
+    'nvim-treesitter/nvim-treesitter',
+    'sheerun/vim-polyglot',
+    'qpkorr/vim-bufkill',
 
     -- Lisp editing
-    use {
+    {
         'tpope/vim-sexp-mappings-for-regular-people',
-        requires = 'guns/vim-sexp',
-        ft = lisps
-    }
+        dependencies = 'guns/vim-sexp',
+    },
 
-    use {
-      'frazrepo/vim-rainbow',
-      ft = lisps
-    }
-
-    use {
+    {
       'bhurlow/vim-parinfer',
       ft = lisps
-    }
+    },
 
-    -- Conjure
-    use {
+    {
         'Olical/conjure',
-        ft = {'clojure', 'scheme', 'julia'}
-    }
+        ft = {'clojure', 'scheme', 'julia', 'racket', 'lisp'}
+    },
+
+    'wlangstroth/vim-racket',
+
 
     -- Idris Editing
-    use {
+    {
         'edwinb/idris2-vim',
         ft = {'idris'}
-    }
+    },
 
     -- Language Server
-    use {
+    {
       'VonHeikemen/lsp-zero.nvim',
-      requires = {
+      branch = 'v2.x',
+      dependencies = {
         -- LSP Support
         {'neovim/nvim-lspconfig'},
         {'williamboman/mason.nvim'},
@@ -98,17 +107,15 @@ require('packer').startup(function(use)
 
         -- Autocompletion
         {'hrsh7th/nvim-cmp'},
-        {'hrsh7th/cmp-buffer'},
-        {'hrsh7th/cmp-path'},
-        {'saadparwaiz1/cmp_luasnip'},
         {'hrsh7th/cmp-nvim-lsp'},
-        -- Snippets
-        {'L3MON4D3/LuaSnip'},
-
+        {'hrsh7th/cmp-buffer'},
       }
-    }
-
-end)
+    },
+    {
+      'ionide/Ionide-vim',
+      ft = "fsharp"
+    },
+  })
 
 ----------------- Aesthetics
 set.termguicolors = true
@@ -117,16 +124,17 @@ set.fillchars = 'fold: '                   -- Make folds look nicer
 
 ----------------- Leader 
 vim.g.mapleader = ","
-vim.g.maplocalleader = "\\"
-vim.keymap.set('n', '<Leader>a', ':bp!<Enter>')
-vim.keymap.set('n', '<Leader>d', ':bn!<Enter>')
-vim.keymap.set('n', '<Leader>c', ':noh!<Enter>')
-vim.keymap.set('n', '<Leader>w', ':<C-w><C-w>')
-vim.keymap.set('n', '<Leader>q', 'b#<bar>bd#<Enter>')
+vim.maplocalleader = "\\"
+
+-- Switching between buffers 
+local keymap = vim.keymap.set
+keymap('n', '<Leader>a', '<cmd>bn<CR>')
+keymap('n', '<leader>d', '<cmd>bp<cr>')
 
 ------------------ Language specific config 
 -- Only use vim-sexp for lisp files 
-vim.g.sexp_filetypes = 'clojure,janet,scheme'
+-- vim.g.sexp_filetypes = 'clojure,janet,scheme,racket'
+vim.g.sexp_filetypes = table.concat(lisps, ',')
 
 local autocmd = vim.api.nvim_create_autocmd
 
@@ -139,38 +147,37 @@ language_file('make', 'make.vim')
 language_file('tex', 'tex.vim')
 language_file('pug', 'pug.vim')
 
+autocmd('BufRead, BufNewFile, BufEnter', {pattern = '*.fs', command = 'set filetype=fsharp'})
+autocmd('BufRead, BufNewFile, BufEnter', {pattern = '*.s', command = 'set filetype=arm64asm'})
+
 ---------------- Telescope Keybindings
 vim.keymap.set('n', '<Leader>ff', '<cmd>Telescope find_files<CR>')
 vim.keymap.set('n', '<leader>fg', '<cmd>Telescope live_grep<cr>')
 vim.keymap.set('n', '<leader>fb', '<cmd>Telescope buffers<cr>')
 vim.keymap.set('n', '<leader>fh', '<cmd>Telescope help_tags<cr>')
+vim.keymap.set('n', '<leader>fr', '<cmd>Telescope lsp_references<cr>')
 
 ---------------- Misc 
 vim.g.python3_host_prog = '/usr/local/bin/python3'
 vim.cmd('map <C-n> :NERDTreeToggle<CR>')
 
 ------------------ LSP Setup
-local lsp = require('lsp-zero')
-lsp.preset('recommended')
+local lsp = require('lsp-zero').preset({})
+
+lsp.on_attach(function(client, bufnr)
+  lsp.default_keymaps({buffer = bufnr})
+end)
 
 lsp.set_preferences({
   suggest_lsp_servers = false
 })
 
-lsp.configure('sumneko_lua', {
-      settings = {
-      Lua = {
-          diagnostics = {
-              globals = { 'vim' }  -- Stop the LSP from calling 'vim' and error
-          }
-      }
-  }
-})
+require'lspconfig'.sourcekit.setup{}
 
 lsp.setup()
 
 vim.diagnostic.config({
-  virtual_text = false,
+  virtual_text = true,
   signs = true,
   update_in_insert = false,
   underline = true,
@@ -178,6 +185,65 @@ vim.diagnostic.config({
   float = true,
 })
 
--- Trouble Setup
-require("trouble").setup {}
-vim.keymap.set('n', '<leader>xx', '<cmd>TroubleToggle<cr>')
+local util = require 'lspconfig.util'
+local configs = require 'lspconfig.configs'
+local lspconfig = require('lspconfig')
+
+require'lspconfig'.zls.setup{}
+require'lspconfig'.racket_langserver.setup{}
+
+-- In Chapel we're using a custom local LSP, so we need to set this up from scratch
+if not configs.chapel then
+  configs.chapel = {
+    default_config = {
+      cmd = { 'node', '/Users/chris/Code/Chapel/dumb_chapel_lsp/build/main.js', '--stdio'}, --, '--logging', 'info' },
+      filetypes = { "chpl" },
+      single_file_support = true,
+      root_dir = function(fname)
+        return util.find_git_ancestor(fname)
+      end,
+      settings = {},
+    }
+  }
+end
+autocmd('BufRead, BufNewFile, BufEnter', {pattern = '*.chpl', command = 'set filetype=chpl'})
+lspconfig.chapel.setup{}
+
+vim.g.zig_fmt_parse_errors = 0
+
+-- Setup autocompletion 
+
+local cmp = require'cmp'
+
+cmp.setup({
+  sources = cmp.config.sources({
+    { name = 'nvim_lsp' },
+    { name = 'buffer' },
+  }),
+  mapping = {
+    ["<Tab>"] = cmp.mapping.select_next_item(),
+    ["<S-Tab>"] = cmp.mapping.select_prev_item(),
+  }
+})
+
+
+-- Setting up Ionide
+vim.g['fsharp#enable_reference_code_lens'] = false
+vim.g['fsharp#fsi_keymap'] = "custom"
+vim.g['fsharp#fsi_keymap_send'] = "<leader>e"
+vim.g['fsharp#fsi_keymap_toggle'] = "<leader>@"
+vim.cmd [[ :tnoremap <Esc> <C-\><C-n> ]]
+
+-- -- Buffers and splits 
+vim.api.nvim_set_keymap('n', '<Space>d', '<cmd>BD!<Cr>!', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<Space>h', '<C-w>h', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<Space>j', '<C-w>j', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<Space>k', '<C-w>k', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<Space>l', '<C-w>l', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<Space>f', '<C-w>l', { noremap = true, silent = true })
+
+-- telescope
+vim.api.nvim_set_keymap('n', '<Space>ff', '<cmd>Telescope find_files<cr>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<Space>fb', '<cmd>Telescope buffers<cr>', { noremap = true, silent = true })
+
+vim.cmd('map <Leader><Leader> <Plug>(easymotion-prefix)')
