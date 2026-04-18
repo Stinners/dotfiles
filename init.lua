@@ -1,4 +1,5 @@
 local set = vim.o
+
 set.showmatch = true
 set.hlsearch = true
 set.incsearch = true
@@ -6,6 +7,9 @@ set.showmode = false
 set.wildmode = "longest,list,full"
 set.wildmenu = true
 set.splitright = true
+
+-- Disanle automatically inserting multi line comments
+vim.cmd([[autocmd FileType * set formatoptions-=ro]])
 
 -- Tabs and indentation
 set.tabstop = 4
@@ -31,8 +35,21 @@ set.scrolloff=3
 set.sidescrolloff=7
 set.sidescroll=1
 
+-- setup filetype associations
+vim.filetype.add({
+    extension = {
+        chpl = "chapel",
+        fs = "fsharp",
+        pest = "pest",
+        m = "objc",
+        c3 = "c3",
+        bqn = "bqn",
+        typst = "typst",
+        typ = "typst",
+    }
+})
 
-local lisps = {'clojure', 'scheme', 'janet', 'racket', 'lisp'}
+local lisps = {'clojure', 'scheme', 'janet', 'racket', 'lisp', 'fennel'}
 
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
@@ -49,14 +66,11 @@ vim.opt.rtp:prepend(lazypath)
 
 -- Defining Plugins
 require('lazy').setup({
-   'wbthomason/packer.nvim',
-
     -- Colorscheme 
     'drewtempelmeyer/palenight.vim',
 
     -- Utilities
     'preservim/nerdtree',
-    'vim-airline/vim-airline',
     'vim-scripts/restore_view.vim',
     'nvim-tree/nvim-web-devicons',
     {
@@ -64,17 +78,8 @@ require('lazy').setup({
       dependencies = 'nvim-lua/plenary.nvim'
     },
     "easymotion/vim-easymotion",
-
-    -- Language support
-    'nvim-treesitter/nvim-treesitter',
-    'sheerun/vim-polyglot',
     'qpkorr/vim-bufkill',
-
-    -- Lisp editing
-    {
-        'tpope/vim-sexp-mappings-for-regular-people',
-        dependencies = 'guns/vim-sexp',
-    },
+    'romgrk/barbar.nvim',
 
     {
       'bhurlow/vim-parinfer',
@@ -82,40 +87,38 @@ require('lazy').setup({
     },
 
     {
-        'Olical/conjure',
-        ft = {'clojure', 'scheme', 'julia', 'racket', 'lisp'}
+      'Olical/conjure',
+      ft = {'clojure', 'scheme', 'julia', 'racket', 'lisp', 'fennel'}
     },
 
-    'wlangstroth/vim-racket',
+    'neovim/nvim-lspconfig',
+    'hrsh7th/nvim-cmp',
+    'hrsh7th/cmp-nvim-lsp',
+    'hrsh7th/cmp-buffer',
 
-
-    -- Idris Editing
     {
-        'edwinb/idris2-vim',
-        ft = {'idris'}
+      'chomosuke/typst-preview.nvim',
+      ft = {"typst"}
     },
 
-    -- Language Server
     {
-      'VonHeikemen/lsp-zero.nvim',
-      branch = 'v2.x',
-      dependencies = {
-        -- LSP Support
-        {'neovim/nvim-lspconfig'},
-        {'williamboman/mason.nvim'},
-        {'williamboman/mason-lspconfig.nvim'},
-
-        -- Autocompletion
-        {'hrsh7th/nvim-cmp'},
-        {'hrsh7th/cmp-nvim-lsp'},
-        {'hrsh7th/cmp-buffer'},
-      }
-    },
-    {
-      'ionide/Ionide-vim',
-      ft = "fsharp"
-    },
-  })
+      "scalameta/nvim-metals",
+      ft = { "scala", "sbt" },
+      opts = function()
+        return require("metals").bare_config()
+      end,
+      config = function(self, metals_config)
+        local nvim_metals_group = vim.api.nvim_create_augroup("nvim-metals", { clear = true })
+        vim.api.nvim_create_autocmd("FileType", {
+          pattern = self.ft,
+          callback = function()
+            require("metals").initialize_or_attach(metals_config)
+          end,
+          group = nvim_metals_group,
+        })
+      end
+    }
+})
 
 ----------------- Aesthetics
 set.termguicolors = true
@@ -133,7 +136,6 @@ keymap('n', '<leader>d', '<cmd>bp<cr>')
 
 ------------------ Language specific config 
 -- Only use vim-sexp for lisp files 
--- vim.g.sexp_filetypes = 'clojure,janet,scheme,racket'
 vim.g.sexp_filetypes = table.concat(lisps, ',')
 
 local autocmd = vim.api.nvim_create_autocmd
@@ -146,35 +148,21 @@ language_file(lisps, 'lisp.vim')
 language_file('make', 'make.vim')
 language_file('tex', 'tex.vim')
 language_file('pug', 'pug.vim')
-
-autocmd('BufRead, BufNewFile, BufEnter', {pattern = '*.fs', command = 'set filetype=fsharp'})
-autocmd('BufRead, BufNewFile, BufEnter', {pattern = '*.s', command = 'set filetype=arm64asm'})
+language_file('ada', 'ada.vim')
 
 ---------------- Telescope Keybindings
-vim.keymap.set('n', '<Leader>ff', '<cmd>Telescope find_files<CR>')
-vim.keymap.set('n', '<leader>fg', '<cmd>Telescope live_grep<cr>')
-vim.keymap.set('n', '<leader>fb', '<cmd>Telescope buffers<cr>')
-vim.keymap.set('n', '<leader>fh', '<cmd>Telescope help_tags<cr>')
-vim.keymap.set('n', '<leader>fr', '<cmd>Telescope lsp_references<cr>')
+vim.keymap.set('n', '<Space>ff', '<cmd>Telescope find_files<CR>')
+vim.keymap.set('n', '<Space>fg', '<cmd>Telescope live_grep<cr>')
+vim.keymap.set('n', '<Space>fb', '<cmd>Telescope buffers<cr>')
+vim.keymap.set('n', '<Space>fh', '<cmd>Telescope help_tags<cr>')
+vim.keymap.set('n', '<Space>fr', '<cmd>Telescope lsp_references<cr>')
 
 ---------------- Misc 
 vim.g.python3_host_prog = '/usr/local/bin/python3'
 vim.cmd('map <C-n> :NERDTreeToggle<CR>')
 
 ------------------ LSP Setup
-local lsp = require('lsp-zero').preset({})
-
-lsp.on_attach(function(client, bufnr)
-  lsp.default_keymaps({buffer = bufnr})
-end)
-
-lsp.set_preferences({
-  suggest_lsp_servers = false
-})
-
-require'lspconfig'.sourcekit.setup{}
-
-lsp.setup()
+local util = require 'lspconfig.util'
 
 vim.diagnostic.config({
   virtual_text = true,
@@ -185,33 +173,52 @@ vim.diagnostic.config({
   float = true,
 })
 
-local util = require 'lspconfig.util'
-local configs = require 'lspconfig.configs'
-local lspconfig = require('lspconfig')
+vim.lsp.enable('clangd')
+vim.lsp.enable('julials')
+vim.lsp.enable('svelte')
+vim.lsp.enable('ts_ls')
+vim.lsp.enable('csharp_ls')
+vim.lsp.enable('fsautocomplete')
 
-require'lspconfig'.zls.setup{}
-require'lspconfig'.racket_langserver.setup{}
+vim.lsp.config.cls = {
+    cmd = {'chpl-language-server', '--end-markers', 'all'},
+    filetypes = {'chpl'},
+    autostart = true,
+    single_file_support = true,
+    --root_dir = util.find_git_ancestor,
+    root_markers = { ".git" },
+    settings = {},
+}
+vim.lsp.enable('cls')
 
--- In Chapel we're using a custom local LSP, so we need to set this up from scratch
-if not configs.chapel then
-  configs.chapel = {
-    default_config = {
-      cmd = { 'node', '/Users/chris/Code/Chapel/dumb_chapel_lsp/build/main.js', '--stdio'}, --, '--logging', 'info' },
-      filetypes = { "chpl" },
-      single_file_support = true,
-      root_dir = function(fname)
-        return util.find_git_ancestor(fname)
-      end,
-      settings = {},
-    }
-  }
-end
-autocmd('BufRead, BufNewFile, BufEnter', {pattern = '*.chpl', command = 'set filetype=chpl'})
-lspconfig.chapel.setup{}
-
+-- Stop zig errors from opening in quickfix buffer
 vim.g.zig_fmt_parse_errors = 0
 
--- Setup autocompletion 
+-- Stop the lua lsp from complaining about 'vim'
+-- table in this file
+vim.lsp.config("lua_ls", {
+    settings = {
+        Lua = {
+            diagnostics = {
+                globals = { "vim" }
+            }
+        }
+    }
+})
+
+
+vim.lsp.config["tinymist"] = {
+    cmd = { "tinymist" },
+    filetypes = { "typst" },
+    settings = {
+        formatterMode = "typstyle",
+        exportPdf = "onType",
+        semanticTokens = "disable"
+    }
+}
+vim.lsp.enable("tinymist")  -- typst
+
+-------------------- Setup autocompletion 
 
 local cmp = require'cmp'
 
@@ -226,24 +233,45 @@ cmp.setup({
   }
 })
 
+--------------------- Formatters 
+function def_formater(filetype, command, on_save) 
+  local format_cmd = "!".. command .. " " .. vim.fn.expand("%")
 
--- Setting up Ionide
-vim.g['fsharp#enable_reference_code_lens'] = false
-vim.g['fsharp#fsi_keymap'] = "custom"
-vim.g['fsharp#fsi_keymap_send'] = "<leader>e"
-vim.g['fsharp#fsi_keymap_toggle'] = "<leader>@"
-vim.cmd [[ :tnoremap <Esc> <C-\><C-n> ]]
+  -- For some filetypes we want to avoid formating on save
+  -- since the formater is slow
+  if on_save then 
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = filetype,
+        callback = function(args)
+            vim.api.nvim_create_autocmd("BufWritePre", {
+                buffer = args.buf,
+                callback = function() 
+                    vim.fn.system(format_cmd)
+                    vim.cmd("edit!")
+                end 
+            })
+        end,
+      })
+  end 
+
+  -- Always enable the hotkey for formating
+  vim.api.nvim_create_autocmd("FileType", {
+    pattern = filetype,
+    callback = function()
+      vim.keymap.set("n", "F", function()
+        vim.cmd(format_cmd)
+        vim.cmd("checktime")
+      end, { buffer = true })
+    end,
+  })
+
+end
+
+def_formater("scala", "scalafmt", false)
+def_formater("go", "gofmt -w", true)
+
 
 -- -- Buffers and splits 
 vim.api.nvim_set_keymap('n', '<Space>d', '<cmd>BD!<Cr>!', { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<Space>h', '<C-w>h', { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<Space>j', '<C-w>j', { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<Space>k', '<C-w>k', { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<Space>l', '<C-w>l', { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<Space>f', '<C-w>l', { noremap = true, silent = true })
-
--- telescope
-vim.api.nvim_set_keymap('n', '<Space>ff', '<cmd>Telescope find_files<cr>', { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<Space>fb', '<cmd>Telescope buffers<cr>', { noremap = true, silent = true })
 
 vim.cmd('map <Leader><Leader> <Plug>(easymotion-prefix)')

@@ -1,10 +1,10 @@
-/* Goes in the Firefox profile folder, on MacOs this is 
+/* Goes in the Firefox profile folder, on MacOs this is
  * /Users/chris/Library/Application Support/Firefox/Profiles/<profile>/chrome
  */
 
-
 /* Hide the timeline in facebook */
-@-moz-document url(https://www.facebook.com/) {
+@-moz-document url(https://www.facebook.com/)
+{
     div[role="main"] {
         display: none !important;
     }
@@ -18,7 +18,28 @@
     }
 
     /* Main page */
-    ytd-rich-section-renderer {
+    ytd-rich-shelf-renderer {
+        display: none !important;
+    }
+
+    /* search page */
+    grid-shelf-view-model {
+        display: none !important;
+    }
+
+    /* Make thumbnails smaller on home page */
+    ytd-rich-item-renderer {
+        --ytd-rich-grid-items-per-row: 4 !important;
+    }
+
+    ytd-rich-grid-renderer {
+        --items-per-row: 4 !important;
+    }
+}
+
+@-moz-document domain(linkedin.com) {
+    [data-testid="mainFeed"] {
         display: none !important;
     }
 }
+
